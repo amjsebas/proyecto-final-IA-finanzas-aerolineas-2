@@ -1,0 +1,30 @@
+# Core
+pandas==2.2.3
+numpy==1.26.4
+scipy==1.13.1
+
+# Market data
+yfinance==0.2.50
+finvizfinance==0.14.7
+
+# Technical indicators
+ta==0.11.0
+
+# NLP / sentiment
+transformers==4.46.0
+torch==2.5.1
+google-generativeai==0.8.3
+
+# ML
+scikit-learn==1.5.2
+econml==0.15.1
+joblib==1.4.2
+
+# Visualization
+matplotlib==3.9.2
+seaborn==0.13.2
+
+# Notebook
+ipython==8.27.0
+jupyter==1.1.1
+nbformat==5.10.4

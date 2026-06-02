@@ -1,0 +1,35 @@
+"""
+config.py — copia este archivo como config.py y rellena tus credenciales.
+NO subir config.py a Git (esta en .gitignore).
+
+Proyecto:   Modelos de Inteligencia Artificial para Finanzas
+Profesor:   Luis Angel Lozano Medina
+Equipo:     Mauricio Jazo, Sebastian Aceves, Jose Hernandez
+Entrega:    08 de junio de 2026
+"""
+
+# Google Gemini (gratuito): https://aistudio.google.com/app/apikey
+GEMINI_API_KEY = ""
+GEMINI_MODEL   = "gemini-1.5-flash"
+
+# Parametros del proyecto
+UNIVERSE   = ["AAL", "DAL", "UAL", "LUV", "JBLU", "ULCC"]
+BENCHMARK  = "JETS"
+HORIZON    = 5      # dias habiles para forward return
+INITIAL_CAPITAL = 100_000
+
+# Periodo de datos (12 meses)
+DATA_START = "2024-06-01"
+DATA_END   = None   # None = hoy
+
+# Umbrales de senal discreta (Fase 5)
+BUY_THRESHOLD  =  0.25
+SELL_THRESHOLD = -0.25
+
+# Risk framework (Fase 8)
+CONFIDENCE_FLOOR = 0.60
+MAX_POSITION_PCT = 0.20
+
+# Auto-clasificacion de noticias augmentadas con Gemini
+RUN_AUTO_CLASSIFICATION = True
+AUTO_CLASS_CONFIDENCE_FLOOR = 0.50
