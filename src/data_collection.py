@@ -128,10 +128,14 @@ def fetch_yfinance_news(tickers: Iterable[str],
 # ---------------------------------------------------------------------------
 
 def fetch_finviz_news(tickers: Iterable[str],
-                      company_names: dict | None = None) -> pd.DataFrame:
+                      company_names: dict | None = None,
+                      max_per_ticker: int | None = None) -> pd.DataFrame:
     """
     finvizfinance scrapea la tabla de noticias de Finviz por ticker.
     Suele tener mas historico que yfinance.
+
+    max_per_ticker : si se pasa, limita a las primeras N noticias por ticker.
+                     Util para controlar el tamano del dataset augmentado.
     """
     if not HAS_FINVIZ:
         print("  finvizfinance no instalado; skipping.")
@@ -144,6 +148,8 @@ def fetch_finviz_news(tickers: Iterable[str],
         try:
             stock = finvizfinance(tk)
             news_df = stock.ticker_news()
+            if max_per_ticker is not None:
+                news_df = news_df.head(max_per_ticker)
             for _, r in news_df.iterrows():
                 try:
                     dt = pd.to_datetime(r["Date"])
