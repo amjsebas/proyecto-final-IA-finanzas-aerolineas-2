@@ -110,20 +110,54 @@ def classify_with_gemini(headline: str, ticker: str, model, max_retries: int = 3
 
 
 def score_gemini(df: pd.DataFrame, api_key: str,
-                 model_name: str = "gemini-1.5-flash",
-                 sleep_between: float = 0.5,
-                 progress_every: int = 10) -> pd.DataFrame:
+                 model_name: str = "gemini-2.5-flash",
+                 sleep_between: float = 0.0,
+                 progress_every: int = 10,
+                 checkpoint_path: str | None = None,
+                 checkpoint_every: int = 50) -> pd.DataFrame:
     """
     Aplica Gemini fila a fila. Devuelve un DataFrame con columnas:
       llm_event_type, llm_sentiment_score, llm_confidence, llm_reasoning.
+
+    Parametros nuevos:
+        sleep_between    : 0.0 por default (tier pagado no necesita rate-limit artificial).
+                           Subir solo si te tira 429s seguidos.
+        checkpoint_path  : si se pasa una ruta CSV, guarda progreso cada checkpoint_every filas.
+                           Si la ruta ya existe al iniciar, RETOMA desde donde quedo.
+        checkpoint_every : cuantas filas procesar antes de guardar el checkpoint.
+
+    Ejemplo:
+        score_gemini(df, api_key="...", checkpoint_path="/content/saved/gemini_ckpt.csv")
     """
+    import os as _os
+
     model = _configure_gemini(api_key, model_name)
-    rows = []
-    for i, r in df.reset_index(drop=True).iterrows():
+
+    # Resume desde checkpoint si existe
+    rows: list[dict] = []
+    start_idx = 0
+    if checkpoint_path and _os.path.exists(checkpoint_path):
+        ckpt = pd.read_csv(checkpoint_path)
+        rows = ckpt.to_dict(orient="records")
+        start_idx = len(rows)
+        print(f"  Resume desde checkpoint: {start_idx} filas ya procesadas")
+
+    df_iter = df.reset_index(drop=True).iloc[start_idx:]
+    for i, r in df_iter.iterrows():
         rows.append(classify_with_gemini(r["headline"], r["ticker"], model))
         if progress_every and (i + 1) % progress_every == 0:
             print(f"  Gemini: {i+1}/{len(df)}")
-        time.sleep(sleep_between)
+        # Checkpoint periodico
+        if checkpoint_path and (i + 1) % checkpoint_every == 0:
+            _os.makedirs(_os.path.dirname(checkpoint_path) or ".", exist_ok=True)
+            pd.DataFrame(rows).to_csv(checkpoint_path, index=False)
+        if sleep_between > 0:
+            time.sleep(sleep_between)
+
+    # Save final checkpoint
+    if checkpoint_path:
+        _os.makedirs(_os.path.dirname(checkpoint_path) or ".", exist_ok=True)
+        pd.DataFrame(rows).to_csv(checkpoint_path, index=False)
 
     out = pd.DataFrame(rows)
     out.columns = [f"llm_{c}" for c in out.columns]
@@ -198,20 +232,29 @@ def compare_finbert_vs_gemini(df: pd.DataFrame) -> dict:
 # ---------------------------------------------------------------------------
 
 def auto_classify_unlabeled(df_unlabeled: pd.DataFrame, api_key: str,
-                            model_name: str = "gemini-1.5-flash",
-                            confidence_floor: float = 0.5) -> pd.DataFrame:
+                            model_name: str = "gemini-2.5-flash",
+                            confidence_floor: float = 0.5,
+                            checkpoint_path: str | None = "/content/saved/gemini_autoclass_ckpt.csv",
+                            sleep_between: float = 0.0) -> pd.DataFrame:
     """
     Toma noticias sin clasificacion manual (use_in_model vacio) y las clasifica
     con Gemini. Marca como use_in_model='yes' las que el LLM considera relevantes
     (event_type != irrelevant y confidence >= floor).
 
     Sirve para crecer la muestra del modeling table de ~43 a ~200+.
+
+    checkpoint_path : guarda progreso periodicamente y RETOMA desde donde quedo
+                      si el archivo existe. Default lo pone en /content/saved/ que
+                      sobrevive runtime restarts en Colab. Pasa None para desactivar.
+    sleep_between   : 0.0 por default (tier pagado). Sube a 0.5+ solo en tier gratis.
     """
     if df_unlabeled.empty:
         return df_unlabeled
 
     print(f"Auto-clasificando {len(df_unlabeled)} headlines con Gemini...")
-    llm = score_gemini(df_unlabeled, api_key=api_key, model_name=model_name)
+    llm = score_gemini(df_unlabeled, api_key=api_key, model_name=model_name,
+                       sleep_between=sleep_between,
+                       checkpoint_path=checkpoint_path)
     out = pd.concat([df_unlabeled.reset_index(drop=True), llm], axis=1)
 
     # Marca para uso en el modelo
