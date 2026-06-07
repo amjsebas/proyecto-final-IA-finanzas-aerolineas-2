@@ -1,9 +1,9 @@
-# Sistema Multi-Factor de Senales de Trading con LLMs
+# Sistema Multi-Factor de Señales de Trading con LLMs
 
 **Curso:** Modelos de Inteligencia Artificial para Finanzas — EGADE Business School  
 **Profesor:** Luis Angel Lozano Medina  
 **Entrega:** 08 de junio de 2026  
-**Equipo:** Mauricio Jazo, Sebastian Aceves, Jose Hernandez
+**Equipo:** Mauricio Jazo, Sebástian Aceves, José Hernandez
 **Universo:** Aerolineas US (AAL, DAL, UAL, LUV, JBLU, ULCC) | **Benchmark:** ETF JETS
 
 ## Que hace este sistema
